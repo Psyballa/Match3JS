@@ -5,13 +5,12 @@
   },
   "shortName": "Match3JS",
   "studio": {
-    "domain": "studio.example.com",
-    "name": "Your Studio Name",
-    "stagingDomain": "staging.example.com"
+    "domain": "telmo.match3.com",
+    "name": "Telmo's Dreams",
+    "stagingDomain": "telmo.match3.com"
   },
   "supportedOrientations": [
-    "portrait",
-    "landscape"
+    "portrait"
   ],
   "title": "Match3JS"
 }
