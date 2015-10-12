@@ -108,18 +108,21 @@ exports = Class(View, function (supr) {
 	};
 
 	this._deleteGems = function _deleteGems(gems) {
+		if (!gems) {
+			return;
+		}
 		gems.forEach(function (gem) {
 			this._gems[gem.getPosition().y][gem.getPosition().x] = null;
 			this.removeSubview(gem);
 		}.bind(this));
 
-		this._fillInBlankGems();
+		this._shiftExistingGemsDown();
 	};
 
-	this._fillInBlankGems = function _fillInBlankGems() {
+	this._shiftExistingGemsDown = function _shiftExistingGemsDown() {
 		// Iterate through columns bottom up, looking for non-null gems.
 		for (var row = this._boardHeight - 1; row > -1; row--) {
-			for (var col = 0; col <this._boardWidth; col++) {
+			for (var col = 0; col < this._boardWidth; col++) {
 				if (this._gems[row][col] !== null) {
 					var currGem = this._gems[row][col];
 					var spaceBelow = 1;
@@ -130,8 +133,46 @@ exports = Class(View, function (supr) {
 				}
 			}
 		}
+
+		this._createNewGemsForColumns();
 	};
 
+	this._createNewGemsForColumns = function _createNewGemsForColumns() {
+		// Iterate by column, starting from bottom. Once we hit a null spot, we know all spots
+		// above are also null (thanks to our trusty function _shiftExistingGemsDown)
+		for (var col = 0; col < this._boardWidth; col++) {
+			for (var row = this._boardHeight - 1; row > -1; row--) {
+				if (this._gems[row][col] === null) {
+					while (row > -1) {
+						var gem = this._createGem(col, row, []);
+						gem.style.y = row * this._gemSize;
+						gem.style.x = col * this._gemSize;
+						gem.setPosition({x: col, y: row});
+						this._gems[row][col] = gem;
+						this.addSubview(gem);
+						gem.animateFall(gem.style.y);
+						row--;
+					}
+				}
+			}
+		}
+		this._updatePositionsForBoard();
+		setTimeout(
+			function() {
+				this._deleteGems(this._checkForMatches());
+			}.bind(this),
+		250);
+	}
+
+	this._updatePositionsForBoard = function _updatePositionsForBoard() {
+		for (var i = 0; i < this._boardHeight; i++) {
+			for (var j = 0; j < this._boardWidth; j++) {
+				this._gems[i][j].setPosition({x: j, y: i});
+				this._gems[i][j].style.y = i * this._gemSize;
+				this._gems[i][j].style.x = j * this._gemSize;
+			}
+		}
+	}
 	this._shiftGemDown = function _shiftGemDown(gem, space) {
 		this._gems[gem.getPosition().y][gem.getPosition().x] = null;
 		this._gems[gem.getPosition().y+space][gem.getPosition().x] = gem;
