@@ -99,7 +99,11 @@ exports = Class(View, function (supr) {
 		var matches = [];
 		// Find matches horizontally
 		matches = matches.concat(this._findMatchesOnRows());
-		// console.log(matches);
+		matches = matches.concat(this._findMatchesOnColumns());
+		
+		matches = matches.filter(function (item, pos, self) {
+			return self.indexOf(item) === pos;
+		});
 
 		return matches;
 	};
@@ -131,7 +135,35 @@ exports = Class(View, function (supr) {
 				
 			}
 		}.bind(this));
-		// console.log(matches);
+		return matches;
+	}
+
+	// While this understandably looks very similar to _findMatchesOnRows, we need this.
+	this._findMatchesOnColumns = function _findMatchesOnColumns() {
+		var matches = [];
+		for (var col = 0; col < this._boardWidth; col++) {
+			var currentStreak = 0;
+			var currentGemColor = this._gems[0][col].getColorType();
+			var previousGemColor;
+			for (var row = 1; row < this._boardHeight; row++) {
+				previousGemColor = currentGemColor;
+				currentGemColor = this._gems[row][col].getColorType();
+				if (currentGemColor === previousGemColor) {
+					currentStreak++;
+					if (currentStreak === 2) {
+						for (var streakIdx = currentStreak; streakIdx > -1; streakIdx--) {
+							matches.push(this._gems[row-streakIdx][col]);
+						}
+					}
+					if (currentStreak > 2) {
+						matches.push(this._gems[row][col]);
+					}
+				} else {
+					currentStreak = 0;
+				}
+				
+			}
+		}
 		return matches;
 	}
 
