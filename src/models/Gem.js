@@ -48,19 +48,15 @@ exports = Class(View, function (supr) {
 	};
 
 	this._getPossibleColorType = function _getPossibleColorType(forbiddenColorTypes) {
-		// debugger;
 		if (!forbiddenColorTypes) {
 			return;
 		}
-		console.log("forbiddenColorTypes: ");
-		console.log(forbiddenColorTypes);
 		var knownColorTypes = [0, 1, 2, 3, 4];
 		var acceptedTypes = knownColorTypes.filter(
 			function (currentType) {
 				return forbiddenColorTypes.indexOf(currentType) < 0;
 			}
 		);
-		console.log(acceptedTypes);
 		return GLOBAL.utils.getRandomElementFromArray(acceptedTypes);	
 	};
 
@@ -69,8 +65,6 @@ exports = Class(View, function (supr) {
 	};
 
 	this.setPosition = function setPosition(pos) {
-		console.log("*** setting position of gem to: ");
-		console.log(pos);
 		this._position = pos;
 	};
 
