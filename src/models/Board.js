@@ -89,7 +89,7 @@ exports = Class(View, function (supr) {
 				
 				this._deselectGem();
 				this._isSelecting = false;
-				this._checkForMatches();
+				this._deleteGems(this._checkForMatches());
 			}
 		}
 	};
@@ -108,6 +108,12 @@ exports = Class(View, function (supr) {
 		return matches;
 	};
 
+	this._deleteGems = function _deleteGems(gems) {
+		gems.forEach(function (gem) {
+			this._gems[gem.getPosition().y][gem.getPosition().x] = null;
+			this.removeSubview(gem);
+		}.bind(this));
+	}
 	this._findMatchesOnRows = function _findMatchesOnRows() {
 		// Traverse through each row
 		var matches = [];
