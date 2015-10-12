@@ -5,8 +5,9 @@ import ui.ImageView as ImageView;
 import ui.resource.Image as Image;
 
 import src.models.Gem as Gem;
-
+import src.models.AudioManager as AudioManager;
 var SELECTED_GEM_MARGIN = 2; // Ensuring when a gem is selected, selection looks bigger.
+var MAX_CHAIN_SOUNDS = 4;
 exports = Class(View, function (supr) {
 	this._gems = [];
 	this._boardWidth = 0;
@@ -15,6 +16,10 @@ exports = Class(View, function (supr) {
 	this._isSelecting = false;
 	this._selectedGem = null;
 	this._selectedView = null;
+	this._chainingGems = false;
+	this._currentChain = 0;
+	this._sounds = AudioManager.getSounds();
+
 	this.init = function (args) {
 		this._boardWidth = args.boardWidth;
 		this._boardHeight = args.boardHeight;
@@ -22,7 +27,8 @@ exports = Class(View, function (supr) {
 			args,
 			{
 				width: this._boardWidth * this._gemSize,
-				height: this._boardHeight * this._gemSize
+				height: this._boardHeight * this._gemSize,
+				clips: false
 			}
 		);
 
@@ -75,23 +81,37 @@ exports = Class(View, function (supr) {
 	this.onInputSelect = function onInputSelect(startEvent, startPoint) {
 		var gemOnPoint = this._getGemForPoint(startPoint);
 		var gemDiff = this._getDistanceBetweenTwoGems(this._selectedGem, gemOnPoint);
-		if (gemOnPoint) {
-			var gemDX, gemDY;
-			if (gemDiff) {
-				gemDX = gemDiff.x;
-				gemDY = gemDiff.y;
-			}
-			if (!this._isSelecting || ((gemDX > 1) || (gemDY > 1))) {
-				this._selectGem(gemOnPoint);
-				this._isSelecting = true;
+		var gemDX, gemDY;
+		if (!this._chainingGems && gemOnPoint) {
+			if (this._selectedGem) {
+				if (gemDiff) {
+					gemDX = gemDiff.x;
+					gemDY = gemDiff.y;
+				}
+				if (gemOnPoint === this._selectedGem) {
+					this._deselectGem();
+				} else if ((gemDX > 1) || (gemDY > 1) || (gemDX === 1 && gemDY === 1)) {
+					this._selectGem(gemOnPoint);
+				} else {
+					this._validateMove(this._selectedGem, gemOnPoint);
+					this._deselectGem();
+				}				
 			} else {
-				this._swapGems(this._selectedGem, gemOnPoint);
-				this._deselectGem();
-				this._isSelecting = false;
-				this._deleteGems(this._checkForMatches());
+				this._selectGem(gemOnPoint);
 			}
 		}
 	};
+
+	this._validateMove = function _validateMove(srcGem, destGem) {
+		this._swapGems(srcGem, destGem);
+		var matchedGems = this._checkForMatches();
+		if (matchedGems.length > 0) {
+			this._deleteGems(this._checkForMatches());
+		} else {
+			this._sounds.play('invalidSwap');
+			this._swapGems(destGem, srcGem);
+		}
+	}
 
 	this._checkForMatches = function _checkForMatches() {
 		// Traverse through gems array
@@ -108,33 +128,48 @@ exports = Class(View, function (supr) {
 	};
 
 	this._deleteGems = function _deleteGems(gems) {
-		if (!gems) {
-			return;
-		}
-		gems.forEach(function (gem) {
-			this._gems[gem.getPosition().y][gem.getPosition().x] = null;
-			this.removeSubview(gem);
-		}.bind(this));
+		if (gems.length > 0) {
+			this._currentChain++;
+			if (this._currentChain > MAX_CHAIN_SOUNDS) {
+				this._currentChain = MAX_CHAIN_SOUNDS;
+			}
+			this._chainingGems = true;
+			this._sounds.play('match' + this._currentChain);
+			// this.emit('soundmanager.playChainSound', this._currentChain);
+			gems.forEach(function (gem) {
+				this._gems[gem.getPosition().y][gem.getPosition().x] = null;
+				this.removeSubview(gem);
+			}.bind(this));
 
-		this._shiftExistingGemsDown();
+			// this._updatePositionsForBoard();
+			
+			setTimeout(function() {
+				this._shiftExistingGemsDown();
+			}.bind(this), 150);
+		} else {
+			this._chainingGems = false;
+			this._currentChain = 0;
+		}
 	};
 
 	this._shiftExistingGemsDown = function _shiftExistingGemsDown() {
 		// Iterate through columns bottom up, looking for non-null gems.
-		for (var row = this._boardHeight - 1; row > -1; row--) {
+		for (var row = this._boardHeight - 2; row > -1; row--) {
 			for (var col = 0; col < this._boardWidth; col++) {
 				if (this._gems[row][col] !== null) {
 					var currGem = this._gems[row][col];
 					var spaceBelow = 1;
-					while (row + spaceBelow < this._boardHeight && this._gems[row+spaceBelow][col] === null) {
-						this._shiftGemDown(currGem, spaceBelow);
+					while ((row + spaceBelow) < this._boardHeight && this._gems[row+spaceBelow][col] === null) {
+						this._shiftGemDown(currGem, (row+spaceBelow));
 						spaceBelow++;
 					}
 				}
 			}
 		}
 
-		this._createNewGemsForColumns();
+		setTimeout(function() {
+			this._createNewGemsForColumns();
+		}.bind(this), 150);
 	};
 
 	this._createNewGemsForColumns = function _createNewGemsForColumns() {
@@ -147,7 +182,6 @@ exports = Class(View, function (supr) {
 						var gem = this._createGem(col, row, []);
 						gem.style.y = row * this._gemSize;
 						gem.style.x = col * this._gemSize;
-						gem.setPosition({x: col, y: row});
 						this._gems[row][col] = gem;
 						this.addSubview(gem);
 						gem.animateFall(gem.style.y);
@@ -156,7 +190,8 @@ exports = Class(View, function (supr) {
 				}
 			}
 		}
-		this._updatePositionsForBoard();
+
+		// this._updatePositionsForBoard();
 		setTimeout(
 			function() {
 				this._deleteGems(this._checkForMatches());
@@ -164,20 +199,11 @@ exports = Class(View, function (supr) {
 		250);
 	}
 
-	this._updatePositionsForBoard = function _updatePositionsForBoard() {
-		for (var i = 0; i < this._boardHeight; i++) {
-			for (var j = 0; j < this._boardWidth; j++) {
-				this._gems[i][j].setPosition({x: j, y: i});
-				this._gems[i][j].style.y = i * this._gemSize;
-				this._gems[i][j].style.x = j * this._gemSize;
-			}
-		}
-	}
 	this._shiftGemDown = function _shiftGemDown(gem, space) {
 		this._gems[gem.getPosition().y][gem.getPosition().x] = null;
-		this._gems[gem.getPosition().y+space][gem.getPosition().x] = gem;
-
-		gem.style.y = (gem.getPosition().y + space) * this._gemSize;
+		this._gems[space][gem.getPosition().x] = gem;
+		gem.setPosition({x: gem.getPosition().x, y: space});
+		gem.style.y = (space) * this._gemSize;
 		gem.animateFall(gem.style.y);
 	};
 

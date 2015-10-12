@@ -65,16 +65,11 @@ exports = Class(View, function (supr) {
 	};
 
 	this.setPosition = function setPosition(pos) {
-		console.log("*** position before set: ");
-		console.log(this._position);
 		this._position = pos;
-
-		console.log("*** position after set");
-		console.log(this._position);
 	};
 
 	this.animateFall = function animateFall(pos) {
 		this._imageView.style.y = -pos;
-		this._animator.now({y: 0}, 200, animate.linear);
+		this._animator.now({y: 0}, 200, animate.easeOut);
 	};
 });
