@@ -74,8 +74,15 @@ exports = Class(View, function (supr) {
 
 	this.onInputSelect = function onInputSelect(startEvent, startPoint) {
 		var gemOnPoint = this._getGemForPoint(startPoint);
+		var gemDiff = this._getDistanceBetweenTwoGems(this._selectedGem, gemOnPoint);
 		if (gemOnPoint) {
-			if (!this._isSelecting) {
+			var gemDX, gemDY;
+			if (gemDiff) {
+				gemDX = gemDiff.x;
+				gemDY = gemDiff.y;
+			}
+			console.log(gemDiff);
+			if (!this._isSelecting || ((gemDX > 1) || (gemDY > 1))) {
 				this._selectGem(gemOnPoint);
 				this._isSelecting = true;
 			} else {
@@ -86,6 +93,9 @@ exports = Class(View, function (supr) {
 	};
 
 	this._selectGem = function _selectGem(gem) {
+		if (this._selectedGem) {
+			this._deselectGem();
+		}
 		this._selectedGem = gem;
 		this._selectedView.style.x = (gem.getPosition().x * this._gemSize) - SELECTED_GEM_MARGIN;
 		this._selectedView.style.y = (gem.getPosition().y * this._gemSize) - SELECTED_GEM_MARGIN;
@@ -111,6 +121,19 @@ exports = Class(View, function (supr) {
 		return this._getGemAtPosition(px, py);
 	};
 
+	this._getDistanceBetweenTwoGems = function _getDistanceBetweenTwoGems(gemA, gemB) {
+		if (!gemA || !gemB) {
+			return null;
+		}
+		var gemAPos = gemA.getPosition();
+		var gemBPos = gemB.getPosition();
+		if (gemAPos && gemBPos) { 
+			var dx = Math.abs(gemBPos.x - gemAPos.x);
+			var dy = Math.abs(gemBPos.y - gemAPos.y);
+
+			return {x: dx, y: dy};
+		}
+	}
 	this._getGemAtPosition = function _getGemAtPosition(px, py) {
 		return this._gems[py][px];
 	};
