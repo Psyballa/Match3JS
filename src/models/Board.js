@@ -72,6 +72,31 @@ exports = Class(View, function (supr) {
 		}
 	};
 
+	this.onInputSelect = function onInputSelect(startEvent, startPoint) {
+		var gemOnPoint = this._getGemForPoint(startPoint);
+		if (gemOnPoint) {
+			if (!this._isSelecting) {
+				this._selectGem(gemOnPoint);
+				this._isSelecting = true;
+			} else {
+				this._deselectGem();
+				this._isSelecting = false;
+			}
+		}
+	};
+
+	this._selectGem = function _selectGem(gem) {
+		this._selectedGem = gem;
+		this._selectedView.style.x = (gem.getPosition().x * this._gemSize) - SELECTED_GEM_MARGIN;
+		this._selectedView.style.y = (gem.getPosition().y * this._gemSize) - SELECTED_GEM_MARGIN;
+		this._selectedView.style.visible = true;
+	};
+
+	this._deselectGem = function _deselectGem() {
+		this._selectedView.style.visible = false;
+		this._selectedGem = null;
+	};
+
 	this._createGem = function _createGem(col, row, forbiddenColorTypes) {
 		return new Gem({
 			position: {x: col, y: row},
