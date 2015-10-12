@@ -65,7 +65,12 @@ exports = Class(View, function (supr) {
 	};
 
 	this.setPosition = function setPosition(pos) {
+		console.log("*** position before set: ");
+		console.log(this._position);
 		this._position = pos;
+
+		console.log("*** position after set");
+		console.log(this._position);
 	};
 
 	this.animateFall = function animateFall(pos) {

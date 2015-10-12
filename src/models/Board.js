@@ -86,11 +86,54 @@ exports = Class(View, function (supr) {
 				this._isSelecting = true;
 			} else {
 				this._swapGems(this._selectedGem, gemOnPoint);
+				
 				this._deselectGem();
 				this._isSelecting = false;
+				this._checkForMatches();
 			}
 		}
 	};
+
+	this._checkForMatches = function _checkForMatches() {
+		// Traverse through gems array
+		var matches = [];
+		// Find matches horizontally
+		matches = matches.concat(this._findMatchesOnRows());
+		// console.log(matches);
+
+		return matches;
+	};
+
+	this._findMatchesOnRows = function _findMatchesOnRows() {
+		// Traverse through each row
+		var matches = [];
+		this._gems.forEach(function (row){
+			// Iterate right, checking for matches.
+			var currentGemColor = row[0].getColorType();
+			var prevGemColor;
+			var currentStreak = 0;
+			for (var rowIdx = 1; rowIdx < this._boardWidth; rowIdx++) {
+				prevGemColor = currentGemColor;
+				currentGemColor = row[rowIdx].getColorType();
+				if (currentGemColor === prevGemColor) {
+					currentStreak++;
+					if (currentStreak === 2) { // It's a match!
+						for(var streakIdx = currentStreak; streakIdx > -1; streakIdx--) {
+							matches.push(row[rowIdx-streakIdx]);
+						}
+					}
+					if (currentStreak > 2) { // You got more than a match-3!
+						matches.push(row[rowIdx]);
+					}
+				} else {
+					currentStreak = 0;
+				}
+				
+			}
+		}.bind(this));
+		// console.log(matches);
+		return matches;
+	}
 
 	this._selectGem = function _selectGem(gem) {
 		if (this._selectedGem) {
@@ -107,21 +150,23 @@ exports = Class(View, function (supr) {
 		this._selectedGem = null;
 	};
 
-	this._swapGems = function _swapGems(srcGem, destGem) {
-		var tmpGem = srcGem;
-		var tmpY = srcGem.style.y;
-		var tmpX = srcGem.style.x;
+	this._swapGems = function _swapGems(srcGem, destGem) {	
+		// Swap for gems array
 		this._gems[srcGem.getPosition().y][srcGem.getPosition().x] = destGem;
-		this._gems[srcGem.getPosition().y][srcGem.getPosition().x].setPosition(destGem.getPosition());
 		this._gems[destGem.getPosition().y][destGem.getPosition().x] = srcGem;
-		this._gems[destGem.getPosition().y][destGem.getPosition().x].setPosition(tmpGem.getPosition());
+		// Swap that player sees
+		var tempPos = srcGem.getPosition();
+		var tempY = srcGem.style.y;
+		var tempX = srcGem.style.x;
 
+		srcGem.setPosition(destGem.getPosition());
 		srcGem.style.y = destGem.style.y;
 		srcGem.style.x = destGem.style.x;
 
-		destGem.style.y = tmpY;
-		destGem.style.x = tmpX;
-	}
+		destGem.setPosition(tempPos);
+		destGem.style.y = tempY;
+		destGem.style.x = tempX;
+	};
 
 	this._createGem = function _createGem(col, row, forbiddenColorTypes) {
 		return new Gem({
@@ -149,7 +194,8 @@ exports = Class(View, function (supr) {
 
 			return {x: dx, y: dy};
 		}
-	}
+	};
+
 	this._getGemAtPosition = function _getGemAtPosition(px, py) {
 		return this._gems[py][px];
 	};
