@@ -81,11 +81,11 @@ exports = Class(View, function (supr) {
 				gemDX = gemDiff.x;
 				gemDY = gemDiff.y;
 			}
-			console.log(gemDiff);
 			if (!this._isSelecting || ((gemDX > 1) || (gemDY > 1))) {
 				this._selectGem(gemOnPoint);
 				this._isSelecting = true;
 			} else {
+				this._swapGems(this._selectedGem, gemOnPoint);
 				this._deselectGem();
 				this._isSelecting = false;
 			}
@@ -106,6 +106,22 @@ exports = Class(View, function (supr) {
 		this._selectedView.style.visible = false;
 		this._selectedGem = null;
 	};
+
+	this._swapGems = function _swapGems(srcGem, destGem) {
+		var tmpGem = srcGem;
+		var tmpY = srcGem.style.y;
+		var tmpX = srcGem.style.x;
+		this._gems[srcGem.getPosition().y][srcGem.getPosition().x] = destGem;
+		this._gems[srcGem.getPosition().y][srcGem.getPosition().x].setPosition(destGem.getPosition());
+		this._gems[destGem.getPosition().y][destGem.getPosition().x] = srcGem;
+		this._gems[destGem.getPosition().y][destGem.getPosition().x].setPosition(tmpGem.getPosition());
+
+		srcGem.style.y = destGem.style.y;
+		srcGem.style.x = destGem.style.x;
+
+		destGem.style.y = tmpY;
+		destGem.style.x = tmpX;
+	}
 
 	this._createGem = function _createGem(col, row, forbiddenColorTypes) {
 		return new Gem({
