@@ -86,7 +86,6 @@ exports = Class(View, function (supr) {
 				this._isSelecting = true;
 			} else {
 				this._swapGems(this._selectedGem, gemOnPoint);
-				
 				this._deselectGem();
 				this._isSelecting = false;
 				this._deleteGems(this._checkForMatches());
@@ -113,7 +112,34 @@ exports = Class(View, function (supr) {
 			this._gems[gem.getPosition().y][gem.getPosition().x] = null;
 			this.removeSubview(gem);
 		}.bind(this));
-	}
+
+		this._fillInBlankGems();
+	};
+
+	this._fillInBlankGems = function _fillInBlankGems() {
+		// Iterate through columns bottom up, looking for non-null gems.
+		for (var row = this._boardHeight - 1; row > -1; row--) {
+			for (var col = 0; col <this._boardWidth; col++) {
+				if (this._gems[row][col] !== null) {
+					var currGem = this._gems[row][col];
+					var spaceBelow = 1;
+					while (row + spaceBelow < this._boardHeight && this._gems[row+spaceBelow][col] === null) {
+						this._shiftGemDown(currGem, spaceBelow);
+						spaceBelow++;
+					}
+				}
+			}
+		}
+	};
+
+	this._shiftGemDown = function _shiftGemDown(gem, space) {
+		this._gems[gem.getPosition().y][gem.getPosition().x] = null;
+		this._gems[gem.getPosition().y+space][gem.getPosition().x] = gem;
+
+		gem.style.y = (gem.getPosition().y + space) * this._gemSize;
+		gem.animateFall(gem.style.y);
+	};
+
 	this._findMatchesOnRows = function _findMatchesOnRows() {
 		// Traverse through each row
 		var matches = [];
