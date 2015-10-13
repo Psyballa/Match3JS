@@ -17,6 +17,7 @@ exports = Class(View, function (supr) {
 	this._selectedGem = null;
 	this._selectedView = null;
 	this._chainingGems = false;
+	this._onFire = false;
 	this._currentChain = 0;
 	this._sounds = AudioManager.getSounds();
 
@@ -76,6 +77,7 @@ exports = Class(View, function (supr) {
 				this.addSubview(gem);
 			}
 		}
+		console.log(this._gems);
 	};
 
 	this.onInputSelect = function onInputSelect(startEvent, startPoint) {
@@ -135,6 +137,14 @@ exports = Class(View, function (supr) {
 			}
 			this._chainingGems = true;
 			this._sounds.play('match' + this._currentChain);
+			if (this._currentChain == 2) {
+				this._sounds.play('heatingUp');
+			}
+
+			if (this._currentChain === MAX_CHAIN_SOUNDS && !this._onFire) {
+				this._sounds.play('onFire');
+				this._onFire = true;
+			}
 			// this.emit('soundmanager.playChainSound', this._currentChain);
 			gems.forEach(function (gem) {
 				this._gems[gem.getPosition().y][gem.getPosition().x] = null;
@@ -148,6 +158,7 @@ exports = Class(View, function (supr) {
 			}.bind(this), 150);
 		} else {
 			this._chainingGems = false;
+			this._onFire = false;
 			this._currentChain = 0;
 		}
 	};

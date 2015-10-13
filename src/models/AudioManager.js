@@ -35,6 +35,18 @@ exports.getSounds = function() {
 					volume: 0.8,
 					background: false,
 					loop: false
+				},
+				heatingUp: {
+					path: 'effects',
+					volume: 0.8,
+					background: false,
+					loop: false
+				},
+				onFire: {
+					path: 'effects',
+					volume: 1.0,
+					background: false,
+					loop: false
 				}
 			}
 		});
