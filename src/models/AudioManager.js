@@ -47,6 +47,44 @@ exports.getSounds = function() {
 					volume: 1.0,
 					background: false,
 					loop: false
+				},
+				gameOver: {
+					path: 'effects',
+					volume: 1.0,
+					background: false,
+					loop: false
+				},
+				warningKlaxon: {
+					path: 'effects',
+					volume: 0.5,
+					background: false,
+					loop: false,
+				},
+				timerWarning: {
+					path: 'effects',
+					volume: 0.5,
+					background: false,
+					loop: false
+				},
+				music0: {
+					path: 'music',
+					volume: 0.5,
+					background: true
+				},
+				music1: {
+					path: 'music',
+					volume: 0.5,
+					background: true
+				},
+				music2: {
+					path: 'music',
+					volume: 0.5,
+					background: true
+				},
+				music3: {
+					path: 'music',
+					volume: 0.5,
+					background: true
 				}
 			}
 		});

@@ -77,7 +77,6 @@ exports = Class(View, function (supr) {
 				this.addSubview(gem);
 			}
 		}
-		console.log(this._gems);
 	};
 
 	this.onInputSelect = function onInputSelect(startEvent, startPoint) {
@@ -132,17 +131,16 @@ exports = Class(View, function (supr) {
 	this._deleteGems = function _deleteGems(gems) {
 		if (gems.length > 0) {
 			this._currentChain++;
-			if (this._currentChain > MAX_CHAIN_SOUNDS) {
-				this._currentChain = MAX_CHAIN_SOUNDS;
-			}
 			this._chainingGems = true;
-			this._sounds.play('match' + this._currentChain);
-			if (this._currentChain == 2) {
+			var matchSoundName = (this._currentChain > MAX_CHAIN_SOUNDS) ? 4 : this._currentChain
+			this._sounds.play('match' + matchSoundName);
+			if (this._currentChain == 3) {
 				this._sounds.play('heatingUp');
 			}
 
-			if (this._currentChain === MAX_CHAIN_SOUNDS && !this._onFire) {
+			if (this._currentChain > MAX_CHAIN_SOUNDS && !this._onFire) {
 				this._sounds.play('onFire');
+				this.emit('board:incrementMultiplier');
 				this._onFire = true;
 			}
 			// this.emit('soundmanager.playChainSound', this._currentChain);
@@ -151,7 +149,8 @@ exports = Class(View, function (supr) {
 				this.removeSubview(gem);
 			}.bind(this));
 
-			// this._updatePositionsForBoard();
+			var matchScore = gems.length * (100 * this._currentChain);
+			this.emit('board:scoregems', matchScore);
 			
 			setTimeout(function() {
 				this._shiftExistingGemsDown();
@@ -353,4 +352,8 @@ exports = Class(View, function (supr) {
 	this.getBoardHeight = function getBoardHeight() {
 		return this._boardHeight;
 	};
+
+	this.areGemsChaining = function areGemsChaining() {
+		return this._chainingGems;
+	}
 });

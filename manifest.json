@@ -3,14 +3,14 @@
   "dependencies": {
     "devkit-core": "https://github.com/gameclosure/devkit-core#v3.1.0"
   },
-  "shortName": "Match3JS",
+  "shortName": "3match",
+  "title": "3.match",
   "studio": {
-    "domain": "telmo.match3.com",
+    "domain": "telmo.3match.com",
     "name": "Telmo's Dreams",
     "stagingDomain": "telmo.match3.com"
   },
   "supportedOrientations": [
     "portrait"
-  ],
-  "title": "Match3JS"
+  ]
 }
