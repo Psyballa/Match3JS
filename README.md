@@ -1,16 +1,5 @@
-devkit-application-template
+3.Match
 ===========================
 
-Initial file structure for Gameclosure Devkit applications.
+This is a project made in Javascript using the GameClosure framework. Swap sets of gems to create matches that score points! You have sixty seconds no matter what, so make it count!
 
-Includes an empty folder structure that matches the devkit defaults
-and a minimal Application.js file with a "Hello, world!" text view.
-
-
-You can specify a different initial template for new devkit applications
-by adding the `--git-template` paramater to `devkit init` and passing in
-a path to a git repository.
-
-~~~
-devkit init newproject --git-template https://github.com/gameclosure/devkit-application-template
-~~~
