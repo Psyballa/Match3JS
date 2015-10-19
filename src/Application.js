@@ -1,8 +1,12 @@
 import device;
+import animate;
+import ui.View as View;
 import ui.TextView as TextView;
 import ui.StackView as StackView;
 import ui.resource.Image as Image;
 import ui.ImageView as ImageView;
+import ui.resource.loader as Loader;
+
 
 import src.models.TitleScreen as TitleScreen;
 import src.models.GameScreen as GameScreen;
@@ -13,8 +17,10 @@ import src.models.Options as Options;
 import src.models.About as About;
 import src.lib.Util as Utils;
 
+
 var BOUNDS_WIDTH = 576;
 exports = Class(GC.Application, function () {
+	'use strict';
 	this.baseWidth = 0;
 	this.baseHeight = 0;
 	this.scale = 0;
@@ -26,85 +32,40 @@ exports = Class(GC.Application, function () {
 	this._sounds = AudioManager.getSounds();
 	this.initUI = function () {
 		this.scaleUI();
-		GLOBAL.utils = new Utils(); // This is how you get a global class defined.
-		// TODO: Move to game screen class.
-		this._rootView = new StackView({
-			x: 0,
-			y: 0,
-			width: this.baseWidth,
-			height: this.baseHeight
+		this.engine.updateOpts({
+			alwaysRepaint: true,
+			clearEachFrame: true,
+			preload: ['resources/images', 'resources/audio']
 		});
-
-		
-		this._titleScreen = new TitleScreen({
-			x: 0,
-			y: 0,
-			width: this.baseWidth,
-			height: this.baseHeight
-		});
-
-		this._optionsScreen = new Options({
-			x: 0,
-			y: 0,
-			width: this.baseWidth,
-			height: this.baseHeight
-		});
-
-		this._gameScreen = new GameScreen({
-			boardWidth: 8,
-			boardHeight: 8,
-			canHandleEvents: true,
-			blockEvents: false,
-			width: this.baseWidth,
-			height: this.baseHeight,
-			sceneWidth: this.baseWidth,
-			sceneHeight: this.baseHeight
-		});
-
-		this._aboutScreen = new About({
-			x: 0,
-			y: 0,
-			width: this.baseWidth,
-			height: this.baseHeight
-		});
-
-		this.addSubview(this._rootView);
-
-		this._rootView.push(this._titleScreen);
-		
-		
-		GLOBAL.trackNum = GLOBAL.utils.getRandomInteger(0, 4);
-		this._sounds.play('music' + GLOBAL.trackNum);
-		this._subscribeToEvents();
 	};
 
 	this._subscribeToEvents = function _subscribeToEvents() {
 		this._titleScreen.on('titlescreen:play', function startGame() {
-			this._rootView.push(this._gameScreen);
+			this._transitionToView(this._gameScreen);
 			this._gameScreen.emit("gamescreen:start");
 		}.bind(this));
 
 		this._titleScreen.on('titlescreen:options', function openOptions() {
-			this._rootView.push(this._optionsScreen);
+			this._transitionToView(this._optionsScreen);
 		}.bind(this));
 
 		this._titleScreen.on('titlescreen:about', function openAbout() {
-			this._rootView.push(this._aboutScreen);
+			this._transitionToView(this._aboutScreen);
 		}.bind(this));
 
 		this._gameScreen.on('gamescreen:quit', function quitToMenu() {
-			this._rootView.pop();
+			this._transitionToView(this._titleScreen);
 		}.bind(this));
 
 		this._gameScreen.on('gamescreen:gameEnd', function addScoreToLeaderboard(score) {
 			GLOBAL.highScores.push(score);
 			GLOBAL.highScores.sort(function(a,b) { return b - a; });
 			this._titleScreen.getLeaderboard().updateLeaderboardViews();
-			this._rootView.pop();
+			this._transitionToView(this._titleScreen);
 		}.bind(this));
 
 		this._optionsScreen.on('optionsscreen:exit', function exitOptions(){
-			this._rootView.pop();
+			this._transitionToView(this._titleScreen);
 		}.bind(this));
 
 		this._optionsScreen.on('optionsscreen:mutemusic', function muteMusic() {
@@ -126,7 +87,7 @@ exports = Class(GC.Application, function () {
 		}.bind(this));
 
 		this._aboutScreen.on('aboutscreen:exit', function exitAboutScreen() {
-			this._rootView.pop();
+			this._transitionToView(this._titleScreen);
 		}.bind(this));
 
 
@@ -139,7 +100,85 @@ exports = Class(GC.Application, function () {
 		this.view.style.scale = this.scale;
 	}
 	this.launchUI = function () {
-
+		this._createGameScene();
 	};
 
+	this._createGameScene = function _createGameScene() {
+		GLOBAL.utils = new Utils(); // This is how you get a global class defined.
+		GLOBAL.trackNum = GLOBAL.utils.getRandomInteger(0, 4);
+		this._sounds.play('music' + GLOBAL.trackNum);
+		
+		
+		// TODO: Move to game screen class.
+		this._rootView = new View({
+			x: 0,
+			y: 0,
+			opacity: 0,
+			width: this.baseWidth,
+			height: this.baseHeight
+		});
+
+		this._titleScreen = new TitleScreen({
+			x: 0,
+			y: 0,
+			opacity: 0,
+			tag: 'titleScreen',
+			width: this.baseWidth,
+			height: this.baseHeight
+		});
+
+		this._optionsScreen = new Options({
+			x: 0,
+			y: 0,
+			opacity: 0,
+			tag: 'optionsScreen',
+			width: this.baseWidth,
+			height: this.baseHeight
+		});
+
+		this._gameScreen = new GameScreen({
+			boardWidth: 8,
+			boardHeight: 8,
+			canHandleEvents: true,
+			blockEvents: false,
+			opacity: 0,
+			tag: 'gameScreen',
+			width: this.baseWidth,
+			height: this.baseHeight,
+			sceneWidth: this.baseWidth,
+			sceneHeight: this.baseHeight
+		});
+
+		this._aboutScreen = new About({
+			x: 0,
+			y: 0,
+			opacity: 0,
+			tag: 'aboutScreen',
+			width: this.baseWidth,
+			height: this.baseHeight
+		});
+
+		this._rootView = this._titleScreen;
+
+		this.addSubview(this._rootView);
+
+		animate(this._rootView).now({opacity: 1}, 2000, animate.easeOut);
+		// this._rootView.push(this._titleScreen);
+		
+		this._subscribeToEvents();
+	}
+
+	this._transitionToView = function _transitionToView(srcView, transitionTime) {
+		if (!transitionTime) {
+			transitionTime = 100;
+		}
+		animate(srcView).now({opacity: 0}, transitionTime, animate.linear)
+			.wait(transitionTime)
+			.then(function() {
+				this.removeSubview(this._rootView);
+				this._rootView = srcView;
+				this.addSubview(this._rootView);
+				animate(this._rootView).now({opacity: 1}, transitionTime, animate.linear);
+			}.bind(this));
+	}
 });

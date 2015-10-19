@@ -4,6 +4,7 @@ import ui.TextView as TextView
 import ui.widget.ButtonView as Button;
 import ui.resource.Image as Image;
 import ui.ImageView as ImageView;
+import ui.widget.SliderView as SliderView;
 import src.models.AudioManager as AudioManager;
 
 exports = Class(View, function(supr) {
@@ -32,6 +33,30 @@ exports = Class(View, function(supr) {
 		this.addSubview(backgroundView);
 		this._buildLabels();
 		this._buildButtons();
+		this._buildSliderViews();
+	};
+
+	this._buildSliderViews = function _buildSliderViews() {
+		this._volumeSliderView = new SliderView({
+			superview: this,
+			x: this.style.width / 2,
+			y: this.style.height / 2,
+			width: 200,
+			height: 30,
+			fields: {padSize: 10},
+			track: {
+				activeColor: '#008800',
+				inactiveColor: '#E0E0E0'
+			},
+			thumb: {
+				activeColor: '#00AA00',
+				pressedColor: '#990000',
+				inactiveColor: '#008800'
+			},
+			minValue: 0.0,
+			maxValue: 1.0
+		})
+		this.addSubview(this._volumeSliderView);
 	};
 
 	this._buildLabels = function _buildLabels() {

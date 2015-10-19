@@ -1,3 +1,4 @@
+
 import device;
 import animate;
 import ui.View as View;
@@ -8,7 +9,9 @@ import src.models.Gem as Gem;
 import src.models.AudioManager as AudioManager;
 var SELECTED_GEM_MARGIN = 2; // Ensuring when a gem is selected, selection looks bigger.
 var MAX_CHAIN_SOUNDS = 4;
+var SWAP_ANIM_TIME = 250; //ms
 exports = Class(View, function (supr) {
+	'use strict';
 	this._gems = [];
 	this._boardWidth = 0;
 	this._boardHeight = 0;
@@ -17,8 +20,11 @@ exports = Class(View, function (supr) {
 	this._selectedGem = null;
 	this._selectedView = null;
 	this._chainingGems = false;
+	this._animatingSwap = false;
 	this._onFire = false;
 	this._currentChain = 0;
+	this._currentlyDragging = false;
+	this._currentGemCenter = null;
 	this._sounds = AudioManager.getSounds();
 
 	this.init = function (args) {
@@ -29,7 +35,7 @@ exports = Class(View, function (supr) {
 			{
 				width: this._boardWidth * this._gemSize,
 				height: this._boardHeight * this._gemSize,
-				clips: false
+				clip: true
 			}
 		);
 
@@ -72,45 +78,154 @@ exports = Class(View, function (supr) {
 						forbiddenColorTypes.push(this._gems[row-1][col].getColorType());
 					}
 				}
-				var gem = this._createGem(col, row, forbiddenColorTypes);
-				this._gems[row].push(gem);
-				this.addSubview(gem);
+				this._createGem(col, row, forbiddenColorTypes);
 			}
 		}
 	};
 
-	this.onInputSelect = function onInputSelect(startEvent, startPoint) {
-		var gemOnPoint = this._getGemForPoint(startPoint);
-		var gemDiff = this._getDistanceBetweenTwoGems(this._selectedGem, gemOnPoint);
-		var gemDX, gemDY;
-		if (!this._chainingGems && gemOnPoint) {
-			if (this._selectedGem) {
-				if (gemDiff) {
-					gemDX = gemDiff.x;
-					gemDY = gemDiff.y;
+	this.onInputStart = function onInputSelect(startEvent, startPoint) {
+		if (this._chainingGems || this._animatingSwap) {
+			return;
+		}
+
+		var gemOnStartPoint = this._getGemForPoint(startPoint);
+		if (gemOnStartPoint) {
+			this._selectedGem = gemOnStartPoint;
+		}
+		this.startDrag({
+			radius: 1
+		});
+	};
+
+
+	this._getSwapDirectionFromDrag = function _getSwapDirectionFromDrag(delta) {
+		var dx = delta.x;
+		var dy = delta.y;
+		var swapDir;
+
+		if (Math.abs(dx) > Math.abs(dy)) {
+			swapDir = (dx > 0) ? 'right' : 'left';
+		} else {
+			swapDir = (dy > 0) ? 'down' : 'up';
+		}
+
+		return swapDir;
+	};
+
+	this._getSwapAnimationFromDirection = function _getSwapAnimationFromDirection(srcGem, destGem, swapDirection) {
+		var swapAnim;
+		var otherSwapAnim;
+		switch (swapDirection) {
+			case 'up':
+				swapAnim = {y: srcGem.style.y - this._gemSize};
+				otherSwapAnim = {y: destGem.style.y + this._gemSize};
+				break;
+			case 'down':
+				swapAnim = {y: srcGem.style.y + this._gemSize};
+				otherSwapAnim = {y: destGem.style.y - this._gemSize};
+				break;
+			case 'left':
+				swapAnim = {x: srcGem.style.x - this._gemSize};
+				otherSwapAnim = {x: destGem.style.x + this._gemSize};
+				break;
+			case 'right':
+				swapAnim = {x: srcGem.style.x + this._gemSize};
+				otherSwapAnim = {x: destGem.style.x - this._gemSize};
+				break;
+		}
+
+		return {srcAnim: swapAnim, destAnim: otherSwapAnim};
+	};
+
+	// ugly IMO but gets job done. suggestions for alternate implementation appreciated
+	this._getOppositeSwapDirection = function _getOppositeSwapDirection(swapDir) {
+		var oppositeSwapDir;
+		switch(swapDir) {
+			case 'up':
+				oppositeSwapDir = 'down';
+				break;
+			case 'down':
+				oppositeSwapDir = 'up';
+				break;
+			case 'left':
+				oppositeSwapDir = 'right';
+				break;
+			case 'right':
+				oppositeSwapDir = 'left';
+				break;
+		}
+		return oppositeSwapDir;
+	};
+
+	this._animateSwap = function _animateSwap(srcGem, destGem, swapDirection) {
+		var swapAnims = this._getSwapAnimationFromDirection(srcGem, destGem, swapDirection);
+		animate(srcGem).now(swapAnims.srcAnim, SWAP_ANIM_TIME);
+		animate(destGem).now(swapAnims.destAnim, SWAP_ANIM_TIME);
+	};
+
+	this.onDrag = function onDrag(dragEvent, moveEvent, delta) {
+		if (this._currentlyDragging || this._animatingSwap || this._currentlyDragging) {
+			return;
+		}
+		var swapDirection = this._getSwapDirectionFromDrag(delta);
+		this._currentlyDragging = true;
+		var gemAtSwapPoint = this._getGemAtSwapPoint(swapDirection);
+		if (!gemAtSwapPoint && !this._sounds.isPlaying('invalidSwap')) {
+			this._sounds.play('invalidSwap');
+		} else {
+			this._validateMove(this._selectedGem, gemAtSwapPoint, swapDirection);
+		}
+	}
+
+	this._getGemAtSwapPoint = function _getGemAtSwapPoint(swapDir) {
+		if (!this._selectedGem) {
+			return; 
+		}
+		var destGem = null;
+		switch(swapDir) {
+			case 'left':
+				destGem = this._gems[this._selectedGem.getPosition().y][this._selectedGem.getPosition().x-1];
+				break;
+			case 'right':
+				destGem = this._gems[this._selectedGem.getPosition().y][this._selectedGem.getPosition().x+1];
+				break;
+			case 'up':
+				if (this._gems[this._selectedGem.getPosition().y-1]) {
+					destGem = this._gems[this._selectedGem.getPosition().y-1][this._selectedGem.getPosition().x];
 				}
-				if (gemOnPoint === this._selectedGem) {
-					this._deselectGem();
-				} else if ((gemDX > 1) || (gemDY > 1) || (gemDX === 1 && gemDY === 1)) {
-					this._selectGem(gemOnPoint);
-				} else {
-					this._validateMove(this._selectedGem, gemOnPoint);
-					this._deselectGem();
-				}				
-			} else {
-				this._selectGem(gemOnPoint);
-			}
+				break;
+			case 'down':
+				if (this._gems[this._selectedGem.getPosition().y+1]) {
+					destGem = this._gems[this._selectedGem.getPosition().y+1][this._selectedGem.getPosition().x];
+				}
+				break;
 		}
-	};
 
-	this._validateMove = function _validateMove(srcGem, destGem) {
+		return destGem;
+	}
+
+	this.onDragStop = function onDragStop(dragEvent, moveEvent, delta) {
+		this._currentlyDragging = false;
+	}
+
+	this._validateMove = function _validateMove(srcGem, destGem, swapDirection) {
+		this._animatingSwap = true;
+		this._animateSwap(srcGem, destGem, swapDirection);
 		this._swapGems(srcGem, destGem);
 		var matchedGems = this._checkForMatches();
 		if (matchedGems.length > 0) {
-			this._deleteGems(this._checkForMatches());
+			setTimeout(function() {
+				this._deleteGems(this._checkForMatches());
+				this._animatingSwap = false;
+			}.bind(this), SWAP_ANIM_TIME);
 		} else {
-			this._sounds.play('invalidSwap');
-			this._swapGems(destGem, srcGem);
+			setTimeout(function() {
+				var oppSwapDir = this._getOppositeSwapDirection(swapDirection);
+				this._sounds.play('invalidSwap');
+				this._animateSwap(srcGem, destGem, oppSwapDir);
+				this._swapGems(destGem, srcGem);
+				this._animatingSwap = false;
+			}.bind(this), SWAP_ANIM_TIME)
 		}
 	}
 
@@ -120,7 +235,6 @@ exports = Class(View, function (supr) {
 		// Find matches horizontally
 		matches = matches.concat(this._findMatchesOnRows());
 		matches = matches.concat(this._findMatchesOnColumns());
-		
 		matches = matches.filter(function (item, pos, self) {
 			return self.indexOf(item) === pos;
 		});
@@ -143,79 +257,91 @@ exports = Class(View, function (supr) {
 				this.emit('board:incrementMultiplier');
 				this._onFire = true;
 			}
-			// this.emit('soundmanager.playChainSound', this._currentChain);
+			var gemsDestroyed = 0;
 			gems.forEach(function (gem) {
-				this._gems[gem.getPosition().y][gem.getPosition().x] = null;
-				this.removeSubview(gem);
+				gem.style.centerAnchor = true;
+				gem.style.anchorX = gem.getSize()/2;
+				gem.style.anchorY = gem.getSize()/2;
+				var shrinkTick = 0;
+				var shrinkAnim = setInterval(function() {
+					shrinkTick++;
+					if (shrinkTick < 10) {
+						gem.style.scale /= 2;
+					} else {
+						this._gems[gem.getPosition().y][gem.getPosition().x] = null;
+						this.removeSubview(gem);
+						gemsDestroyed++;
+						shrinkTick = 0;
+						clearInterval(shrinkAnim);
+					}
+				}.bind(this), 10);
 			}.bind(this));
 
 			var matchScore = gems.length * (100 * this._currentChain);
 			this.emit('board:scoregems', matchScore);
-			
-			setTimeout(function() {
-				this._shiftExistingGemsDown();
-			}.bind(this), 150);
+
+			var timeUntilDropExistingGems = setInterval(function() {
+				if (gemsDestroyed === gems.length) {
+					this._shiftExistingGemsDown();
+					clearInterval(timeUntilDropExistingGems);
+				}
+				
+			}.bind(this), 20);
 		} else {
 			this._chainingGems = false;
 			this._onFire = false;
 			this._currentChain = 0;
+			device.collectGarbage(); // Chaining has ended, await user input
 		}
 	};
+
+
 
 	this._shiftExistingGemsDown = function _shiftExistingGemsDown() {
 		// Iterate through columns bottom up, looking for non-null gems.
-		for (var row = this._boardHeight - 2; row > -1; row--) {
-			for (var col = 0; col < this._boardWidth; col++) {
-				if (this._gems[row][col] !== null) {
-					var currGem = this._gems[row][col];
-					var spaceBelow = 1;
-					while ((row + spaceBelow) < this._boardHeight && this._gems[row+spaceBelow][col] === null) {
-						this._shiftGemDown(currGem, (row+spaceBelow));
-						spaceBelow++;
+		var lowestColumn = 0;
+		for (var col = 0; col < this._boardWidth; col++) {
+			for (var row = this._boardHeight - 1; row >= 0; row--) {
+				if (this._gems[row][col] === null) {
+					var gemToShift = null;
+					for (var lookUp = row - 1; lookUp >= 0; lookUp--) {
+						lowestColumn = lookUp;
+						gemToShift = this._gems[lookUp][col];
+						if (gemToShift !== null) {
+							this._gems[lookUp][col] = null;
+							this._gems[row][col] = gemToShift;
+							gemToShift.setPosition({x: gemToShift.getPosition().x, y: row});
+							animate(gemToShift).now({y: gemToShift.getPosition().y * this._gemSize}, (100), animate.linear);
+							break;
+						}
 					}
 				}
 			}
 		}
 
+		this._createNewGemsForColumns();
 		setTimeout(function() {
-			this._createNewGemsForColumns();
-		}.bind(this), 150);
+			this._deleteGems(this._checkForMatches());
+		}.bind(this), 350);			
 	};
 
 	this._createNewGemsForColumns = function _createNewGemsForColumns() {
-		// Iterate by column, starting from bottom. Once we hit a null spot, we know all spots
-		// above are also null (thanks to our trusty function _shiftExistingGemsDown)
 		for (var col = 0; col < this._boardWidth; col++) {
 			for (var row = this._boardHeight - 1; row > -1; row--) {
 				if (this._gems[row][col] === null) {
-					while (row > -1) {
-						var gem = this._createGem(col, row, []);
-						gem.style.y = row * this._gemSize;
-						gem.style.x = col * this._gemSize;
-						this._gems[row][col] = gem;
-						this.addSubview(gem);
-						gem.animateFall(gem.style.y);
-						row--;
-					}
+					this._createGem(col, row, []);
 				}
 			}
 		}
-
-		// this._updatePositionsForBoard();
-		setTimeout(
-			function() {
-				this._deleteGems(this._checkForMatches());
-			}.bind(this),
-		250);
 	}
 
-	this._shiftGemDown = function _shiftGemDown(gem, space) {
+	this._shiftGemDown = function _shiftGemDown(gem) {
+		var newY = gem.getPosition().y + 1;
 		this._gems[gem.getPosition().y][gem.getPosition().x] = null;
-		this._gems[space][gem.getPosition().x] = gem;
-		gem.setPosition({x: gem.getPosition().x, y: space});
-		gem.style.y = (space) * this._gemSize;
-		gem.animateFall(gem.style.y);
-	};
+		this._gems[newY][gem.getPosition().x] = gem;
+		gem.setPosition({x: gem.getPosition().x, y: newY});
+		animate(gem).now({y:(newY+1) * this._gemSize}, 50, animate.linear);
+	}
 
 	this._findMatchesOnRows = function _findMatchesOnRows() {
 		// Traverse through each row
@@ -297,23 +423,21 @@ exports = Class(View, function (supr) {
 		this._gems[destGem.getPosition().y][destGem.getPosition().x] = srcGem;
 		// Swap that player sees
 		var tempPos = srcGem.getPosition();
-		var tempY = srcGem.style.y;
-		var tempX = srcGem.style.x;
 
 		srcGem.setPosition(destGem.getPosition());
-		srcGem.style.y = destGem.style.y;
-		srcGem.style.x = destGem.style.x;
 
 		destGem.setPosition(tempPos);
-		destGem.style.y = tempY;
-		destGem.style.x = tempX;
 	};
 
 	this._createGem = function _createGem(col, row, forbiddenColorTypes) {
-		return new Gem({
+		var newGem = new Gem({
 			position: {x: col, y: row},
 			forbiddenColors: forbiddenColorTypes
 		});
+		newGem.style.y = -this._gemSize;
+		this._gems[row][col] = newGem;
+		this.addSubview(newGem);
+		animate(newGem).now({y: (row) * this._gemSize}, (50 * row) + 50, animate.easeOut);
 	};
 
 	this._getGemForPoint = function _getGemForPoint(point) {
@@ -321,20 +445,6 @@ exports = Class(View, function (supr) {
 		var py = Math.floor(point.y / this._gemSize);
 
 		return this._getGemAtPosition(px, py);
-	};
-
-	this._getDistanceBetweenTwoGems = function _getDistanceBetweenTwoGems(gemA, gemB) {
-		if (!gemA || !gemB) {
-			return null;
-		}
-		var gemAPos = gemA.getPosition();
-		var gemBPos = gemB.getPosition();
-		if (gemAPos && gemBPos) { 
-			var dx = Math.abs(gemBPos.x - gemAPos.x);
-			var dy = Math.abs(gemBPos.y - gemAPos.y);
-
-			return {x: dx, y: dy};
-		}
 	};
 
 	this._getGemAtPosition = function _getGemAtPosition(px, py) {

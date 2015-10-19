@@ -5,6 +5,7 @@ import ui.resource.Image as Image;
 import ui.TextView as TextView;
 import ui.View as View;
 import ui.widget.ButtonView as Button;
+import ui.ParticleEngine as ParticleEngine;
 
 import src.models.Board as Board;
 import src.models.AudioManager as AudioManager;
@@ -28,6 +29,10 @@ exports = Class(View, function (supr) {
 	this._quitButton = null;
 	this._backgroundView = null;
 	this._board = null;
+	this._fireworkLeft = null;
+	this._fireworkCenter = null;
+	this._fireworkRight = null;
+
 	this._sounds = AudioManager.getSounds();
 	this.init = function (args) {
 		supr(this, 'init', [args]);
@@ -50,13 +55,52 @@ exports = Class(View, function (supr) {
 		}.bind(this));
 
 
-
 		this._buildUIImageViews();
 		this._buildQuitButton();
 		this._buildTimer();
 		this._buildScoreLabel();
 		this._buildMultiplierLabel();
 	};
+
+
+	this.tick = function (dt) {
+		this._fireworkLeft.runTick(dt);
+		this._fireworkCenter.runTick(dt);
+		this._fireworkRight.runTick(dt);
+	}
+
+	this._buildParticleEngine = function _buildParticleEngine() {
+		this._fireworkLeft = new ParticleEngine({
+			superview: this,
+			width: 50,
+			height: 50,
+			initCount: 50,
+			x:this._board.style.x,
+			y:this._board.style.y - this._board.style.height/8
+		});
+
+		this._fireworkCenter = new ParticleEngine({
+			superview: this,
+			width: 50,
+			height: 50,
+			initCount: 50,
+			x: this.style.width/2,
+			y: this.style.height/2 - this._board.style.height / 2
+		});
+
+		this._fireworkRight = new ParticleEngine({
+			superview: this,
+			width: 50,
+			height: 50,
+			initCount: 50,
+			x: this.style.width - this._board.style.x,
+			y: this.style.height/2 - this._board.style.height /2
+		})
+
+		this.addSubview(this._fireworkLeft);
+		this.addSubview(this._fireworkCenter);
+		this.addSubview(this._fireworkRight);
+	}
 
 	this._buildUIImageViews = function _buildUIImageViews() {
 		this._scoreboardImage = new Image({url: 'resources/images/ui/scoreboard.png'});
@@ -100,6 +144,7 @@ exports = Class(View, function (supr) {
 		
 		this.setHandleEvents(true, false);
 		this._createBoard(args);
+		this._buildParticleEngine();
 		this._resetScore();
 		this._resetTimers();
 		this._resetMultiplier();
@@ -110,8 +155,41 @@ exports = Class(View, function (supr) {
 		this._board.on('board:incrementMultiplier', function incrementMultiplier() {
 			this._multiplier++;
 			this._multiplierLabel.setText(this._multiplier + 'x');
+			this._fireParticles();
 		}.bind(this));
 	};
+
+	this._fireParticles = function _fireParticles() {
+		var particleCount, particleObjects;
+		([this._fireworkLeft, this._fireworkCenter, this._fireworkRight]).forEach(function fireParticlesForSide(side) {
+			particleCount = side._opts.initCount;
+			particleObjects = side.obtainParticleArray(particleCount);
+
+			for (var particleIdx = 0; particleIdx < particleCount; particleIdx++) {
+				var particleObj = particleObjects[particleIdx];
+				particleObj.dx = (Math.random() * 250) * ((Math.random() > 0.5) ? 1 : -1);
+				particleObj.dy = -(Math.random() * 250);
+				particleObj.width = (GLOBAL.utils.getRandomInteger(10, 25));
+				particleObj.height = (GLOBAL.utils.getRandomInteger(10, 25));
+				particleObj.ttl = GLOBAL.utils.getRandomInteger(500, 2000);
+				particleObj.image = this._getRandomParticleImage();
+			}
+			side.emitParticles(particleObjects);
+		}.bind(this));
+	}
+
+	this._getRandomParticleImage = function _getRandomParticleImage() {
+		return GLOBAL.utils.getRandomElementFromArray(this._getParticleImages());
+	};
+
+	this._getParticleImages = function _getParticleImages() {
+		return ['resources/images/particles/round_blue.png',
+		        'resources/images/particles/round_green.png',
+		        'resources/images/particles/round_purple.png',
+		        'resources/images/particles/round_red.png',
+		        'resources/images/particles/round_white.png',
+		        'resources/images/particles/round_yellow.png'];
+	}
 
 	this._createBoard = function _createBoard(args) {
 		this._board = new Board({
@@ -148,6 +226,7 @@ exports = Class(View, function (supr) {
 			size: 72,
 			autoFontSize: true,
 			strokeColor: '#000000',
+			fontFamily: 'Checkbook',
 			color: '#FFFFFF',
 			horizontalAlign: 'center'
 		});

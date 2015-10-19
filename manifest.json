@@ -1,10 +1,18 @@
 {
+  "android": {
+    "icons": {
+      "36": "resources/icons/android36.png",
+      "48": "resources/icons/android48.png",
+      "72": "resources/icons/android72.png",
+      "96": "resources/icons/android96.png"
+    },
+    "versionCode": 1
+  },
   "appID": "8dc43482335640e997d88e9030111f5b",
   "dependencies": {
-    "devkit-core": "https://github.com/gameclosure/devkit-core#v3.1.0"
+    "devkit-core": "https://github.com/gameclosure/devkit-core#v3.1.1"
   },
   "shortName": "3match",
-  "title": "3.match",
   "studio": {
     "domain": "telmo.3match.com",
     "name": "Telmo's Dreams",
@@ -12,5 +20,9 @@
   },
   "supportedOrientations": [
     "portrait"
+  ],
+  "title": "3.match",
+  "ttf": [
+    "resources/fonts/Checkbook.ttf"
   ]
 }

@@ -36,7 +36,7 @@ exports = Class(View, function (supr) {
 			width: this._size,
 			height: this._size
 		});
-		this._animator = animate(this._imageView);
+		this._animator = animate(this);
 	};
 
 	this.getPosition = function getPosition() {
@@ -68,8 +68,7 @@ exports = Class(View, function (supr) {
 		this._position = pos;
 	};
 
-	this.animateFall = function animateFall(pos) {
-		this._imageView.style.y = -pos;
-		this._animator.now({y: 0}, 200, animate.easeOut);
-	};
+	this.getSize = function getSize() {
+		return this._size;
+	}
 });

@@ -43,7 +43,7 @@ exports = Class(View, function (supr) {
 			y: 200,
 			width: this.style.width,
 			height: 400,
-			text: "1. CLICK GEM. \n 2. CLICK NEIGHBORING GEM (NO DIAGONALS!) \n 3. SCORE MAD POINTZ \n 4. STREAKS OF 5 OR MORE INCREASE MULTI",
+			text: "1. DRAG GEM \n 2. SCORE MAD POINTZ \n 3. STREAKS OF 5 OR MORE INCREASE MULTI \n 4. GOOD LUCK",
 			wrap: true,
 			color: '#FFFFFF',
 			size: 50,
