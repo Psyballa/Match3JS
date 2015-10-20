@@ -67,7 +67,6 @@ exports = Class(View, function (supr) {
 		GLOBAL.highScores.sort(function(a,b) { return b - a; });
 	}
 	this.updateLeaderboardViews = function updateLeaderboardViews() {
-		console.log(GLOBAL.highScores);
 		this._views.forEach(function (entry, index) {
 			if (GLOBAL.highScores[index]) {
 				entry.setText(GLOBAL.highScores[index]);
