@@ -1,8 +1,11 @@
+/*
+3.MATCH by Justin Telmo
+All code here and related to 3.MATCH written in Javascript using the GameClosure framework.
+*/
 import device;
 import animate;
 import ui.View as View;
 import ui.TextView as TextView;
-import ui.StackView as StackView;
 import ui.resource.Image as Image;
 import ui.ImageView as ImageView;
 import ui.resource.loader as Loader;
@@ -29,7 +32,7 @@ exports = Class(GC.Application, function () {
 	this._titleScreen = null;
 	GLOBAL.highScores = [];
 	GLOBAL.trackNum = 0;
-	this._sounds = AudioManager.getSounds();
+	
 	this.initUI = function () {
 		this.scaleUI();
 		this.engine.updateOpts({
@@ -37,6 +40,7 @@ exports = Class(GC.Application, function () {
 			clearEachFrame: true,
 			preload: ['resources/images', 'resources/audio']
 		});
+		this._sounds = AudioManager.getSounds();
 	};
 
 	this._subscribeToEvents = function _subscribeToEvents() {
@@ -58,8 +62,7 @@ exports = Class(GC.Application, function () {
 		}.bind(this));
 
 		this._gameScreen.on('gamescreen:gameEnd', function addScoreToLeaderboard(score) {
-			GLOBAL.highScores.push(score);
-			GLOBAL.highScores.sort(function(a,b) { return b - a; });
+			this._titleScreen.getLeaderboard().pushScoreToLeaderboard(score);
 			this._titleScreen.getLeaderboard().updateLeaderboardViews();
 			this._transitionToView(this._titleScreen);
 		}.bind(this));
@@ -89,9 +92,8 @@ exports = Class(GC.Application, function () {
 		this._aboutScreen.on('aboutscreen:exit', function exitAboutScreen() {
 			this._transitionToView(this._titleScreen);
 		}.bind(this));
-
-
 	};
+	
 	this.scaleUI = function () {
 		this.baseWidth = BOUNDS_WIDTH;
 		this.baseHeight = device.height * (BOUNDS_WIDTH / device.width);
@@ -162,9 +164,7 @@ exports = Class(GC.Application, function () {
 
 		this.addSubview(this._rootView);
 
-		animate(this._rootView).now({opacity: 1}, 2000, animate.easeOut);
-		// this._rootView.push(this._titleScreen);
-		
+		animate(this._rootView).now({opacity: 1}, 1000, animate.easeIn);
 		this._subscribeToEvents();
 	}
 

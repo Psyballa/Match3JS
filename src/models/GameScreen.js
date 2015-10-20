@@ -209,11 +209,12 @@ exports = Class(View, function (supr) {
 			size: 72,
 			strokeColor: '#000000',
 			color: '#FFFFFF',
+			fontFamily: 'Checkbook',
 			autoFontSize: true,
 			horizontalAlign: 'center'
 		});
 
-		this._timerLabel.style.y = (this._timerView.style.height / 2) - (this._timerLabel.style.height / 2) + 10;
+		this._timerLabel.style.y = (this._timerView.style.height / 2) - (this._timerLabel.style.height / 2) + 20;
 		this._timerLabel.style.x = (this._timerView.style.width / 2) - (this._timerLabel.style.width / 2);
 		this._timerView.addSubview(this._timerLabel);
 	};
@@ -240,10 +241,12 @@ exports = Class(View, function (supr) {
 			width: this._multiplierView.style.width,
 			height: this._multiplierView.style.height - 20,
 			x: (this._multiplierView.style.width / 2) - (this._multiplierView.style.width / 2) - 20,
-			y: (this._multiplierView.style.height / 2) - (this._multiplierView.style.height / 2) + 20,
+			y: (this._multiplierView.style.height / 2) - (this._multiplierView.style.height / 2) + 30,
+			size: 72,
 			text: this._multiplier + 'x',
 			autoFontSize: true,
 			strokeColor: '#000000',
+			fontFamily: 'Checkbook',
 			color: '#FFFFFF',
 			horizontalAlign: 'center'
 		})
@@ -271,7 +274,7 @@ exports = Class(View, function (supr) {
 				animate(this._timerLabel).now({width: 0, height: 110}, 500, animate.easeIn)
 				.then({width: 150, height: 110}, 500, animate.easeOut);
 				this._timerLabel.updateOpts({color: "#FF0000"});
-				if (this._currentTime < 5) {
+				if (this._currentTime < 4) {
 					this._sounds.play('warningKlaxon');
 				}
 			}

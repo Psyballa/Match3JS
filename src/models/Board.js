@@ -66,13 +66,11 @@ exports = Class(View, function (supr) {
 				var forbiddenColorTypes = [];
 				var gemPastHorizontalThreshold = ((col - 2) > -1);
 				var gemPastVerticalThreshold = ((row - 2) > -1);
-
 				if (gemPastHorizontalThreshold) { // Prevent going off left side of board
 					if (this._gems[row][col-1].getColorType() === this._gems[row][col-2].getColorType()) {
 						forbiddenColorTypes.push(this._gems[row][col-1].getColorType());
 					}
 				}
-
 				if (gemPastVerticalThreshold) { // Prevent off going top of board
 					if (this._gems[row-1][col].getColorType() === this._gems[row-2][col].getColorType()) {
 						forbiddenColorTypes.push(this._gems[row-1][col].getColorType());

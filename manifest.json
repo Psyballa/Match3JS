@@ -10,7 +10,7 @@
   },
   "appID": "8dc43482335640e997d88e9030111f5b",
   "dependencies": {
-    "devkit-core": "https://github.com/gameclosure/devkit-core#v3.1.1"
+    "devkit-core": "https://github.com/gameclosure/devkit-core#master"
   },
   "shortName": "3match",
   "studio": {

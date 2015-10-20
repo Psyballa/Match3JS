@@ -63,6 +63,7 @@ exports = Class(View, function (supr) {
 	};
 
 	this._createUIButton = function _createUIButton(buttonName, btnX) {
+		// btnX is a variable used to position a button relative to its container.
 		this._buttonCount++;
 		return new Button({
 			superview: this._buttonTray,

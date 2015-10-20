@@ -38,6 +38,7 @@ exports = Class(View, function (supr) {
 				size: 50,
 				strokeColor: '#000000',
 				color: '#FFFFFF',
+				fontFamily: 'Checkbook',
 				autoFontSize: true,
 				horizontalAlign: 'center'
 			});
@@ -50,6 +51,7 @@ exports = Class(View, function (supr) {
 				text: '---------',
 				size: 50,
 				strokeColor: '#000000',
+				fontFamily: 'Checkbook',
 				color: '#FFFFFF',
 				autoFontSize: true,
 				horizontalAlign: 'center'
@@ -59,13 +61,17 @@ exports = Class(View, function (supr) {
 			this._leaderboardView.addSubview(entry);
 		}
 	};
+
+	this.pushScoreToLeaderboard = function pushScoreToLeaderboard(score) {
+		GLOBAL.highScores.push(score);
+		GLOBAL.highScores.sort(function(a,b) { return b - a; });
+	}
 	this.updateLeaderboardViews = function updateLeaderboardViews() {
+		console.log(GLOBAL.highScores);
 		this._views.forEach(function (entry, index) {
 			if (GLOBAL.highScores[index]) {
 				entry.setText(GLOBAL.highScores[index]);
 			}
 		});
 	};
-
-
 });

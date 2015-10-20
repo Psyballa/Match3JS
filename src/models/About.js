@@ -20,9 +20,7 @@ exports = Class(View, function (supr) {
 			height: this.style.height,
 			image: this._backgroundImage
 		});
-
-
-
+		
 		this._directionsText = new TextView({
 			superview: this,
 			x: 0,
@@ -48,7 +46,7 @@ exports = Class(View, function (supr) {
 			color: '#FFFFFF',
 			size: 50,
 			strokeColor: '#000000',
-			strokeWidth: 3,
+			strokeWidth: 6,
 			horizontalAlign: 'center',
 			verticalAlign: 'center'
 		})
@@ -66,7 +64,8 @@ exports = Class(View, function (supr) {
 			strokeColor: '#000000',
 			strokeWidth: 3,
 			horizontalAlign: 'center',
-			verticalAlign: 'bottom'
+			verticalAlign: 'bottom',
+			strokeWidth: 4,
 		});
 
 		this._exitBtn = new Button({
